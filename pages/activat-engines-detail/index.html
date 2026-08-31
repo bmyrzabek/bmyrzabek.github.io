@@ -1,0 +1,617 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Activat VC — Движок в деталях</title><style>
+:root{--bg:#FAFAF7;--surface:#FFFFFF;--text:#2C2C2A;--text-muted:#5F5E5A;--text-light:#888780;--border:rgba(0,0,0,0.1)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg)}
+.root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif;color:var(--text);max-width:1240px;margin:0 auto;padding:32px 24px 80px;font-size:15px;line-height:1.55}
+h1{font-size:28px;font-weight:500;margin:0 0 8px}
+h2{font-size:20px;font-weight:500;margin:46px 0 14px;border-bottom:1px solid var(--border);padding-bottom:8px}
+h3{font-size:16px;font-weight:600;margin:22px 0 8px}
+p{margin:8px 0 16px}
+.subtitle{color:var(--text-muted);margin-bottom:20px}
+a{color:#185FA5}
+.intro-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px 22px;margin:16px 0 28px}
+.toc{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 20px;margin:0 0 30px;columns:2;column-gap:34px}
+.toc a{display:block;padding:3px 0;font-size:14px;text-decoration:none;break-inside:avoid}
+.toc a:hover{text-decoration:underline}
+.stage{background:var(--surface);border:1px solid var(--border);border-radius:9px;margin:12px 0;overflow:hidden}
+.stage-head{background:linear-gradient(135deg,#1e3a5f,#0f172a);color:#fff;padding:12px 18px;display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.stage-head b{font-size:15px;font-weight:600}
+.stage-head span{font-size:12.5px;opacity:.8}
+.step{display:grid;grid-template-columns:96px 1fr;gap:14px;padding:9px 18px;border-top:1px solid var(--border);align-items:baseline}
+.step:first-of-type{border-top:0}
+.step-id{font-size:12.5px;font-weight:600;color:#185FA5;font-variant-numeric:tabular-nums}
+.step-t{font-size:13.5px}
+.step-cmds{margin-top:3px;font-size:12px;color:var(--text-light);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.rolecard{background:var(--surface);border:1px solid var(--border);border-radius:9px;margin:18px 0;overflow:hidden}
+.rolehead{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap;background:#F5F3EC}
+.rolehead b{font-size:17px}
+.pill{display:inline-block;padding:2px 10px;border-radius:11px;font-size:12px;border:1px solid;margin-left:6px;white-space:nowrap}
+.p-w{background:#E6F1FB;border-color:#185FA5;color:#0C447C}
+.p-f{background:#E1F5EE;border-color:#0F6E56;color:#085041}
+.grid2{display:grid;grid-template-columns:1.25fr 1fr;gap:0}
+.col{padding:16px 20px}
+.col+.col{border-left:1px solid var(--border)}
+table.crit{width:100%;border-collapse:collapse;font-size:13.5px}
+table.crit td{padding:4px 0;vertical-align:baseline}
+table.crit td.wt{text-align:right;width:52px;color:#1e3a5f;font-weight:600;font-variant-numeric:tabular-nums}
+.bar{height:5px;background:#E1F5EE;border-radius:3px;overflow:hidden;margin-top:2px}
+.bar i{display:block;height:100%;background:#0F6E56}
+.lbl{font-size:12px;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:.4px;margin:14px 0 5px}
+.lbl:first-child{margin-top:0}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-size:12px;padding:2px 8px;border-radius:5px;background:#F1EFE8;border:1px solid rgba(0,0,0,.12);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.chip.h{background:#E1F5EE;border-color:#0F6E56;color:#085041;font-family:inherit}
+.chip.c{background:#FAEEDA;border-color:#854F0B;color:#633806;font-family:inherit}
+.covers{font-size:13px;color:var(--text-muted);margin:0}
+.covers li{margin:4px 0}
+.hlp{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px}
+.hlp h4{margin:0 0 4px;font-size:14.5px}
+.hlp .meta{font-size:12px;color:var(--text-light);margin-bottom:6px}
+.hlp p{margin:6px 0 0;font-size:13px;color:var(--text-muted)}
+.hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin:14px 0 26px}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;border:1px solid;margin-right:4px}
+.t-shared{background:#E6F1FB;border-color:#185FA5;color:#0C447C}
+.t-per{background:#FBEAF0;border-color:#993556;color:#72243E}
+.note{background:var(--surface);border:1px solid var(--border);border-left:3px solid #854F0B;border-radius:6px;padding:13px 17px;margin:16px 0;font-size:14px}
+.note.good{border-left-color:#0F6E56}
+.muted{color:var(--text-muted);font-size:13px}
+.footer{margin-top:50px;padding-top:16px;border-top:1px solid var(--border);color:var(--text-light);font-size:13px}
+@media(max-width:820px){.grid2{grid-template-columns:1fr}.col+.col{border-left:0;border-top:1px solid var(--border)}.toc{columns:1}}
+</style></head><body><div class="root">
+<h1>Движок инвестиционного анализа: весь процесс в деталях</h1>
+<p class="subtitle">Activat VC · 31 августа 2026 · <a href="../activat-engines-scheme/">схема одной картинкой</a> · <a href="../activat-engines-map/">карта для чтения</a></p>
+<div class="intro-card"><p><strong>Чем этот документ отличается от двух других.</strong> Здесь показано содержимое: все шаги потока по порядку, что именно зашито в задании каждого эксперта — критерии с весами, обязательный минимум внешних проверок, поля, без которых разбор не соберётся, — и какие помощники за кем закреплены.</p><p><strong>Страница собрана из самого движка,</strong> а не написана отдельно: критерии и веса читаются из методик, помощники и их границы — из реестра, шаги и проверки — из описания потока. Меняется движок — пересобирается страница.</p></div>
+<div class="toc">
+<a href="#flow">1 · Поток: все шаги по ступеням</a>
+<a href="#roles">2 · Что зашито в задании каждого эксперта</a>
+<a href="#r-CFO" style="padding-left:14px">— Финансы (CFO)</a>
+<a href="#r-CMO" style="padding-left:14px">— Рынок (CMO)</a>
+<a href="#r-CHRO" style="padding-left:14px">— Команда (CHRO)</a>
+<a href="#r-CPO" style="padding-left:14px">— Продукт (CPO)</a>
+<a href="#r-CLO" style="padding-left:14px">— Юридика (CLO)</a>
+<a href="#helpers">3 · Помощники и их границы</a>
+<a href="#gates">4 · Проверки по ступеням</a>
+<a href="#prompt">5 · Из чего состоит задание</a>
+</div>
+<h2 id="flow">1 · Поток: все шаги по ступеням</h2>
+<p>Пятьдесят два шага. Отмечены командой те, что выполняет программа-проверка; остальные — работа экспертов и помощников. Порядок именно такой, как в самом движке.</p>
+<div class="stage">
+<div class="stage-head"><b>Вход</b><span>заявка, мандат, память, материалы · шагов: 7</span></div>
+<div class="step">
+<div class="step-id">1</div>
+<div><div class="step-t">Получить заявку и проверить мандат</div><div class="step-cmds">fetch_application · mandate_gate</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-bis</div>
+<div><div class="step-t">Поднять опыт фонда по похожим сделкам</div><div class="step-cmds">mem_index · mem_search</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-ter</div>
+<div><div class="step-t">Разобрать финансовую модель основателя машиной</div><div class="step-cmds">founder_model_audit</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-sanity</div>
+<div><div class="step-t">Проверить, что все документы читаются</div><div class="step-cmds">input_sanity</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-inputs</div>
+<div><div class="step-t">Собрать объективные величины региона</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-quater</div>
+<div><div class="step-t">Составить опись приложенных документов</div><div class="step-cmds">docs_inventory</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-mirror</div>
+<div><div class="step-t">Поднять второму разбору его собственных помощников</div></div>
+</div>
+</div>
+<div class="stage">
+<div class="stage-head"><b>Разбор одним проходом</b><span>мегапромпт, два прохода внутри · шагов: 5</span></div>
+<div class="step">
+<div class="step-id">2</div>
+<div><div class="step-t">Разбор одним проходом: пять ролей подряд</div><div class="step-cmds">assemble · build_finmodel_from_drivers · consistency_check · validate_report · verify_evidence</div></div>
+</div>
+<div class="step">
+<div class="step-id">2-val</div>
+<div><div class="step-t">Проверить форму отчёта сразу после записи</div></div>
+</div>
+<div class="step">
+<div class="step-id">2-bis</div>
+<div><div class="step-t">Пересчитать числа кодом, а не моделью</div></div>
+</div>
+<div class="step">
+<div class="step-id">2-ter</div>
+<div><div class="step-t">Сквозная проверка финансовой модели</div></div>
+</div>
+<div class="step">
+<div class="step-id">2-red</div>
+<div><div class="step-t">Красная команда против его финансовой модели</div></div>
+</div>
+</div>
+<div class="stage">
+<div class="stage-head"><b>Разбор комиссией</b><span>пять экспертов, помощники, обмен, сведение · шагов: 22</span></div>
+<div class="step">
+<div class="step-id">3</div>
+<div><div class="step-t">Разбор комиссией: пять экспертов параллельно</div><div class="step-cmds">absence_claims · anchor_check · assemble · consistency_check · dep_cov · mandate_gate · outlook_lint · phase_read_check · rcp_audit · relay · stopfactor_check · validate_report · verify_evidence</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-val</div>
+<div><div class="step-t">Проверить форму отчёта каждого эксперта</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-phase</div>
+<div><div class="step-t">Убедиться, что эксперты открыли свои методики</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-stop</div>
+<div><div class="step-t">Стоп-факторы: проверить все шесть условий</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-bis</div>
+<div><div class="step-t">Проверить гражданство основателей</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-ter</div>
+<div><div class="step-t">Добрать поля, без которых разбор не соберётся</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-red</div>
+<div><div class="step-t">Красная команда против финансовой модели</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-red-bis</div>
+<div><div class="step-t">Пересогласовать условия после красной команды</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-scan</div>
+<div><div class="step-t">Собрать карточки живых конкурентов</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-exit</div>
+<div><div class="step-t">Собрать сопоставимые сделки выхода</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-past</div>
+<div><div class="step-t">Найти компании этого рынка, которые закрылись</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-reg</div>
+<div><div class="step-t">Обойти публичные реестры юрисдикции</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-people</div>
+<div><div class="step-t">Собрать публичный след основателей</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-prod</div>
+<div><div class="step-t">Проверить, существует ли продукт вне презентации</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-fin</div>
+<div><div class="step-t">Собрать черновик драйверов финансовой модели</div></div>
+</div>
+<div class="step">
+<div class="step-id">1-false</div>
+<div><div class="step-t">Попытаться опровергнуть каждое «этого нет»</div></div>
+</div>
+<div class="step">
+<div class="step-id">2</div>
+<div><div class="step-t">Обмен вопросами между экспертами</div></div>
+</div>
+<div class="step">
+<div class="step-id">3-dep</div>
+<div><div class="step-t">Назвать структурные зависимости бизнеса</div></div>
+</div>
+<div class="step">
+<div class="step-id">3-anchor</div>
+<div><div class="step-t">Сверить балл с собственной величиной эксперта</div></div>
+</div>
+<div class="step">
+<div class="step-id">3-bis</div>
+<div><div class="step-t">Сверить экспертов между собой</div></div>
+</div>
+<div class="step">
+<div class="step-id">4-cond</div>
+<div><div class="step-t">Проверить, что условия экспертов доехали до свода</div></div>
+</div>
+<div class="step">
+<div class="step-id">4-diff</div>
+<div><div class="step-t">Сравнить находки двух разборов</div></div>
+</div>
+</div>
+<div class="stage">
+<div class="stage-head"><b>Документы и доставка</b><span>рендер, проверки, отправка · шагов: 15</span></div>
+<div class="step">
+<div class="step-id">5</div>
+<div><div class="step-t">Собрать документы и финансовую модель</div><div class="step-cmds">build_finmodel_from_drivers · delivery_check · finmodel_sanity · freshness · gate_ledger · lint_language · narrative_vs_model · questions_gate · questions_vs_docs · reader_audit · render · report_trace · run_diff</div></div>
+</div>
+<div class="step">
+<div class="step-id">5-lint</div>
+<div><div class="step-t">Проверить драйверы финансовой модели</div></div>
+</div>
+<div class="step">
+<div class="step-id">5-xls</div>
+<div><div class="step-t">Проверить, что головные величины Excel посчитались</div></div>
+</div>
+<div class="step">
+<div class="step-id">5-lang</div>
+<div><div class="step-t">Проверить язык: чистый русский, без жаргона</div></div>
+</div>
+<div class="step">
+<div class="step-id">5-read</div>
+<div><div class="step-t">Приёмщик читает готовый документ</div></div>
+</div>
+<div class="step">
+<div class="step-id">5-num</div>
+<div><div class="step-t">Сверить числа текста с числами модели</div></div>
+</div>
+<div class="step">
+<div class="step-id">5-trace</div>
+<div><div class="step-t">Проследить напечатанное до отчётов экспертов</div></div>
+</div>
+<div class="step">
+<div class="step-id">5-age</div>
+<div><div class="step-t">Проверить возраст фактов</div></div>
+</div>
+<div class="step">
+<div class="step-id">5-gates</div>
+<div><div class="step-t">Свести ведомость: какие проверки прогонялись</div></div>
+</div>
+<div class="step">
+<div class="step-id">5-deliv</div>
+<div><div class="step-t">Убедиться, что находки доехали до документа</div></div>
+</div>
+<div class="step">
+<div class="step-id">5-eng</div>
+<div><div class="step-t">Сверить согласие двух разборов</div></div>
+</div>
+<div class="step">
+<div class="step-id">5-qvd</div>
+<div><div class="step-t">Не спрашивать то, что уже приложено</div></div>
+</div>
+<div class="step">
+<div class="step-id">5-qgate</div>
+<div><div class="step-t">Оставить только вопросы, закрывающие пробел</div></div>
+</div>
+<div class="step">
+<div class="step-id">5-quest</div>
+<div><div class="step-t">Собрать два документа вопросов</div><div class="step-cmds">build_questions · questions_state · render_questions</div></div>
+</div>
+<div class="step">
+<div class="step-id">5-docs</div>
+<div><div class="step-t">Собрать рекомендации стартапу и условия сделки</div><div class="step-cmds">collect_conditions</div></div>
+</div>
+</div>
+<div class="stage">
+<div class="stage-head"><b>После доставки</b><span>память фонда, учёт расхода · шагов: 4</span></div>
+<div class="step">
+<div class="step-id">6</div>
+<div><div class="step-t">Отправить комплект в комитет</div><div class="step-cmds">post_to_hermes</div></div>
+</div>
+<div class="step">
+<div class="step-id">6-mem</div>
+<div><div class="step-t">Записать разбор в память фонда</div><div class="step-cmds">mem_archive</div></div>
+</div>
+<div class="step">
+<div class="step-id">6-bis</div>
+<div><div class="step-t">Посчитать, чего стоил прогон</div><div class="step-cmds">run_cost</div></div>
+</div>
+<div class="step">
+<div class="step-id">7</div>
+<div><div class="step-t">Отчитаться: вердикты, расхождения, что осталось</div></div>
+</div>
+</div>
+<h2 id="roles">2 · Что зашито в задании каждого эксперта</h2>
+<p>У каждого эксперта своя методика: список критериев с весами, обязательные объекты, которые он должен проверить снаружи, и поля, которые он обязан заполнить — без них разбор не соберётся. Веса критериев внутри направления дают 100%; вес самого направления в общем балле указан в заголовке.</p>
+<div class="rolecard" id="r-CFO">
+<div class="rolehead"><b>Финансы · CFO</b><div><span class="pill p-w">вес направления 20%</span><span class="pill p-f">минимум внешних проверок: 8</span><span class="pill">критериев: 9</span></div></div>
+<div class="grid2">
+<div class="col"><div class="lbl">критерии оценки и их веса</div><table class="crit">
+<tr><td>Финансовая модель и допущения<div class="bar"><i style="width:64.0%"></i></div></td><td class="wt">20%</td></tr>
+<tr><td>Unit-экономика<div class="bar"><i style="width:57.6%"></i></div></td><td class="wt">18%</td></tr>
+<tr><td>Оценка стартапа (Valuation)<div class="bar"><i style="width:48.0%"></i></div></td><td class="wt">15%</td></tr>
+<tr><td>Верификация статей расходов<div class="bar"><i style="width:32.0%"></i></div></td><td class="wt">10%</td></tr>
+<tr><td>Структура выручки и качество данных<div class="bar"><i style="width:32.0%"></i></div></td><td class="wt">10%</td></tr>
+<tr><td>Cash flow и runway<div class="bar"><i style="width:32.0%"></i></div></td><td class="wt">10%</td></tr>
+<tr><td>Retention и NRR<div class="bar"><i style="width:25.6%"></i></div></td><td class="wt">8%</td></tr>
+<tr><td>Сценарный анализ<div class="bar"><i style="width:16.0%"></i></div></td><td class="wt">5%</td></tr>
+<tr><td>Структура сделки, ROI/IRR и exit-анализ<div class="bar"><i style="width:12.8%"></i></div></td><td class="wt">4%</td></tr>
+</table></div>
+<div class="col">
+<div class="lbl">обязан проверить снаружи</div><ul class="covers">
+<li><b>Внешние ориентиры ставок и цен</b> — зарплаты, облако, эквайринг — по региону кейса</li>
+</ul>
+<div class="lbl">поля, без которых разбор не соберётся</div><div class="chips">
+<span class="chip">revenue_perimeter_ok</span>
+<span class="chip">revised_model_required</span>
+<span class="chip">revenue_base</span>
+<span class="chip">next_round_need_usd</span>
+<span class="chip">founder_model_review</span>
+<span class="chip">anchor_facts</span>
+<span class="chip">dependency_map</span>
+<span class="chip">archive_use</span>
+<span class="chip">helper_use</span>
+<span class="chip">cross_queries</span>
+<span class="chip">outputs_for_colleagues</span>
+</div>
+<div class="lbl">закреплённые помощники</div><div class="chips">
+<span class="chip h">finscout → finmodel_drivers_draft.json</span>
+<span class="chip h">inputscout → market_inputs.json</span>
+<span class="chip h">compscout → competitors.json</span>
+<span class="chip h">redteam → redteam_CFO.md</span>
+<span class="chip h">falsifier → absence_probe</span>
+<span class="chip h">pastscout → market_analogs.json</span>
+<span class="chip h">regscout → registries.json</span>
+<span class="chip h">peoplescout → people_footprint.json</span>
+<span class="chip h">prodscout → product_surfaces.json</span>
+</div>
+<div class="lbl">объём методики</div><p class="muted">49 618 знаков ядра — это то  что эксперт получает всегда; плюс две фазовые карты  которые он открывает по ходу работы.</p>
+</div></div></div>
+<div class="rolecard" id="r-CMO">
+<div class="rolehead"><b>Рынок · CMO</b><div><span class="pill p-w">вес направления 25%</span><span class="pill p-f">минимум внешних проверок: 12</span><span class="pill">критериев: 11</span></div></div>
+<div class="grid2">
+<div class="col"><div class="lbl">критерии оценки и их веса</div><table class="crit">
+<tr><td>Маркетинговый трекшн (CAC, LTV, рост аудитории, конверсия)<div class="bar"><i style="width:48.0%"></i></div></td><td class="wt">15%</td></tr>
+<tr><td>Конкурентный ландшафт<div class="bar"><i style="width:38.400000000000006%"></i></div></td><td class="wt">12%</td></tr>
+<tr><td>Рекомендуемая стратегия выхода на рынок (GTM)<div class="bar"><i style="width:32.0%"></i></div></td><td class="wt">10%</td></tr>
+<tr><td>Подтверждённый спрос рынка (рыночный PMF)<div class="bar"><i style="width:32.0%"></i></div></td><td class="wt">10%</td></tr>
+<tr><td>Уникальное торговое предложение и рыночная позиция<div class="bar"><i style="width:32.0%"></i></div></td><td class="wt">10%</td></tr>
+<tr><td>Текущая маркетинговая стратегия<div class="bar"><i style="width:32.0%"></i></div></td><td class="wt">10%</td></tr>
+<tr><td>Целевая аудитория и сегментация<div class="bar"><i style="width:25.6%"></i></div></td><td class="wt">8%</td></tr>
+<tr><td>Проблема клиента и доказательства спроса<div class="bar"><i style="width:25.6%"></i></div></td><td class="wt">8%</td></tr>
+<tr><td>Структура клиентской базы и переговорный портфель<div class="bar"><i style="width:22.400000000000002%"></i></div></td><td class="wt">7%</td></tr>
+<tr><td>Тренды рынка и венчурный потенциал категории<div class="bar"><i style="width:16.0%"></i></div></td><td class="wt">5%</td></tr>
+<tr><td>Маркетинговые цели и коммерческие показатели<div class="bar"><i style="width:16.0%"></i></div></td><td class="wt">5%</td></tr>
+</table></div>
+<div class="col">
+<div class="lbl">обязан проверить снаружи</div><ul class="covers">
+<li><b>Прямые конкуренты на рынке кейса</b> — кто ещё решает ту же задачу для той же аудитории</li>
+<li><b>Внешняя оценка размера рынка</b> — отраслевой источник, а не цифра из презентации</li>
+</ul>
+<div class="lbl">поля, без которых разбор не соберётся</div><div class="chips">
+<span class="chip">acquisition_efficiency</span>
+<span class="chip">retention_vs_benchmark</span>
+<span class="chip">contract_traction_class</span>
+<span class="chip">several_fold_path_market_view</span>
+<span class="chip">exit_analysis</span>
+<span class="chip">anchor_facts</span>
+<span class="chip">dependency_map</span>
+<span class="chip">archive_use</span>
+<span class="chip">helper_use</span>
+<span class="chip">cross_queries</span>
+<span class="chip">outputs_for_colleagues</span>
+</div>
+<div class="lbl">закреплённые помощники</div><div class="chips">
+<span class="chip h">exitscout → exit_candidates.json</span>
+<span class="chip h">inputscout → market_inputs.json</span>
+<span class="chip h">compscout → competitors.json</span>
+<span class="chip h">redteam → redteam_CFO.md</span>
+<span class="chip h">falsifier → absence_probe</span>
+<span class="chip h">pastscout → market_analogs.json</span>
+<span class="chip h">regscout → registries.json</span>
+<span class="chip h">peoplescout → people_footprint.json</span>
+<span class="chip h">prodscout → product_surfaces.json</span>
+</div>
+<div class="lbl">объём методики</div><p class="muted">48 555 знаков ядра — это то  что эксперт получает всегда; плюс две фазовые карты  которые он открывает по ходу работы.</p>
+</div></div></div>
+<div class="rolecard" id="r-CHRO">
+<div class="rolehead"><b>Команда · CHRO</b><div><span class="pill p-w">вес направления 30%</span><span class="pill p-f">минимум внешних проверок: 12</span><span class="pill">критериев: 6</span></div></div>
+<div class="grid2">
+<div class="col"><div class="lbl">критерии оценки и их веса</div><table class="crit">
+<tr><td>Релевантность опыта и компетенций<div class="bar"><i style="width:89.60000000000001%"></i></div></td><td class="wt">28%</td></tr>
+<tr><td>Командная динамика и устойчивость<div class="bar"><i style="width:76.80000000000001%"></i></div></td><td class="wt">24%</td></tr>
+<tr><td>Полнота покрытия ролей<div class="bar"><i style="width:44.800000000000004%"></i></div></td><td class="wt">14%</td></tr>
+<tr><td>Вовлечённость и мотивация<div class="bar"><i style="width:44.800000000000004%"></i></div></td><td class="wt">14%</td></tr>
+<tr><td>Публичный профиль и репутация<div class="bar"><i style="width:38.400000000000006%"></i></div></td><td class="wt">12%</td></tr>
+<tr><td>Моральные качества и соответствие принципам инвестора<div class="bar"><i style="width:25.6%"></i></div></td><td class="wt">8%</td></tr>
+</table></div>
+<div class="col">
+<div class="lbl">обязан проверить снаружи</div><ul class="covers">
+<li><b>Негативный фон по каждому основателю</b> — суды, банкротства, уголовные дела, санкционные списки — в ОБОИХ написаниях имени</li>
+<li><b>Профессиональный след основателей</b> — подтверждение заявленного опыта внешним источником</li>
+</ul>
+<div class="lbl">поля, без которых разбор не соберётся</div><div class="chips">
+<span class="chip">founders_citizenship</span>
+<span class="chip">anchor_facts</span>
+<span class="chip">dependency_map</span>
+<span class="chip">archive_use</span>
+<span class="chip">helper_use</span>
+<span class="chip">cross_queries</span>
+<span class="chip">outputs_for_colleagues</span>
+</div>
+<div class="lbl">закреплённые помощники</div><div class="chips">
+<span class="chip h">inputscout → market_inputs.json</span>
+<span class="chip h">compscout → competitors.json</span>
+<span class="chip h">redteam → redteam_CFO.md</span>
+<span class="chip h">falsifier → absence_probe</span>
+<span class="chip h">pastscout → market_analogs.json</span>
+<span class="chip h">regscout → registries.json</span>
+<span class="chip h">peoplescout → people_footprint.json</span>
+<span class="chip h">prodscout → product_surfaces.json</span>
+</div>
+<div class="lbl">объём методики</div><p class="muted">37 582 знаков ядра — это то  что эксперт получает всегда; плюс две фазовые карты  которые он открывает по ходу работы.</p>
+</div></div></div>
+<div class="rolecard" id="r-CPO">
+<div class="rolehead"><b>Продукт · CPO</b><div><span class="pill p-w">вес направления 15%</span><span class="pill p-f">минимум внешних проверок: 10</span><span class="pill">критериев: 8</span></div></div>
+<div class="grid2">
+<div class="col"><div class="lbl">критерии оценки и их веса</div><table class="crit">
+<tr><td>Наличие и зрелость продукта<div class="bar"><i style="width:64.0%"></i></div></td><td class="wt">20%</td></tr>
+<tr><td>Пользовательские метрики продукта (вовлечённость и удержание)<div class="bar"><i style="width:57.6%"></i></div></td><td class="wt">18%</td></tr>
+<tr><td>Продукт решает задачу пользователя (продуктовый PMF)<div class="bar"><i style="width:48.0%"></i></div></td><td class="wt">15%</td></tr>
+<tr><td>Технологический стек и масштабируемость<div class="bar"><i style="width:48.0%"></i></div></td><td class="wt">15%</td></tr>
+<tr><td>UX/UI качество продукта<div class="bar"><i style="width:32.0%"></i></div></td><td class="wt">10%</td></tr>
+<tr><td>Технологическое УТП и инновационность<div class="bar"><i style="width:32.0%"></i></div></td><td class="wt">10%</td></tr>
+<tr><td>Roadmap и приоритизация<div class="bar"><i style="width:22.400000000000002%"></i></div></td><td class="wt">7%</td></tr>
+<tr><td>Безопасность и надёжность<div class="bar"><i style="width:16.0%"></i></div></td><td class="wt">5%</td></tr>
+</table></div>
+<div class="col">
+<div class="lbl">обязан проверить снаружи</div><ul class="covers">
+<li><b>Публичные поверхности продукта</b> — сайт и магазины приложений: существует ли продукт вне презентации</li>
+</ul>
+<div class="lbl">поля, без которых разбор не соберётся</div><div class="chips">
+<span class="chip">scalability_x10</span>
+<span class="chip">tech_moat_class</span>
+<span class="chip">scale_ceiling</span>
+<span class="chip">anchor_facts</span>
+<span class="chip">dependency_map</span>
+<span class="chip">archive_use</span>
+<span class="chip">helper_use</span>
+<span class="chip">cross_queries</span>
+<span class="chip">outputs_for_colleagues</span>
+</div>
+<div class="lbl">закреплённые помощники</div><div class="chips">
+<span class="chip h">inputscout → market_inputs.json</span>
+<span class="chip h">compscout → competitors.json</span>
+<span class="chip h">redteam → redteam_CFO.md</span>
+<span class="chip h">falsifier → absence_probe</span>
+<span class="chip h">pastscout → market_analogs.json</span>
+<span class="chip h">regscout → registries.json</span>
+<span class="chip h">peoplescout → people_footprint.json</span>
+<span class="chip h">prodscout → product_surfaces.json</span>
+</div>
+<div class="lbl">объём методики</div><p class="muted">51 128 знаков ядра — это то  что эксперт получает всегда; плюс две фазовые карты  которые он открывает по ходу работы.</p>
+</div></div></div>
+<div class="rolecard" id="r-CLO">
+<div class="rolehead"><b>Юридика · CLO</b><div><span class="pill p-w">вес направления 10%</span><span class="pill p-f">минимум внешних проверок: 12</span><span class="pill">критериев: 7</span></div></div>
+<div class="grid2">
+<div class="col"><div class="lbl">критерии оценки и их веса</div><table class="crit">
+<tr><td>Права инвестора и условия SHA<div class="bar"><i style="width:70.4%"></i></div></td><td class="wt">22%</td></tr>
+<tr><td>Благонадёжность основателей и ключевых лиц<div class="bar"><i style="width:64.0%"></i></div></td><td class="wt">20%</td></tr>
+<tr><td>Лицензионный и регуляторный статус<div class="bar"><i style="width:51.2%"></i></div></td><td class="wt">16%</td></tr>
+<tr><td>Интеллектуальная собственность<div class="bar"><i style="width:41.6%"></i></div></td><td class="wt">13%</td></tr>
+<tr><td>Корпоративная структура<div class="bar"><i style="width:35.2%"></i></div></td><td class="wt">11%</td></tr>
+<tr><td>Санкции и правовые инциденты<div class="bar"><i style="width:35.2%"></i></div></td><td class="wt">11%</td></tr>
+<tr><td>Договорная база и персональные данные<div class="bar"><i style="width:22.400000000000002%"></i></div></td><td class="wt">7%</td></tr>
+</table></div>
+<div class="col">
+<div class="lbl">обязан проверить снаружи</div><ul class="covers">
+<li><b>Юрлицо в публичном реестре юрисдикции</b> — регистрация, статус, руководитель — реестр, а не вопрос заявителю</li>
+<li><b>Санкционные и дисквалификационные списки</b> — по компании и каждому основателю</li>
+</ul>
+<div class="lbl">поля, без которых разбор не соберётся</div><div class="chips">
+<span class="chip">stop_factor_checks</span>
+<span class="chip">anchor_facts</span>
+<span class="chip">dependency_map</span>
+<span class="chip">archive_use</span>
+<span class="chip">helper_use</span>
+<span class="chip">cross_queries</span>
+<span class="chip">outputs_for_colleagues</span>
+</div>
+<div class="lbl">закреплённые помощники</div><div class="chips">
+<span class="chip h">inputscout → market_inputs.json</span>
+<span class="chip h">compscout → competitors.json</span>
+<span class="chip h">redteam → redteam_CFO.md</span>
+<span class="chip h">falsifier → absence_probe</span>
+<span class="chip h">pastscout → market_analogs.json</span>
+<span class="chip h">regscout → registries.json</span>
+<span class="chip h">peoplescout → people_footprint.json</span>
+<span class="chip h">prodscout → product_surfaces.json</span>
+</div>
+<div class="lbl">объём методики</div><p class="muted">47 367 знаков ядра — это то  что эксперт получает всегда; плюс две фазовые карты  которые он открывает по ходу работы.</p>
+</div></div></div>
+<h2 id="helpers">3 · Помощники и их границы</h2>
+<p>Помощник приносит проверяемые факты и <strong>не даёт оценок</strong> — граница проходит там же, где ответственность за балл. Каждый пишет ровно один файл, и пишет его <em>до</em> того, как вернёт ответ: иначе работа живёт только в его памяти и гибнет при обрыве связи.</p>
+<p class="muted"><span class="tag t-shared">общий</span> — у объекта есть единственный правильный ответ, не зависящий от того, кто ищет (запись в реестре, ставка налога, факт закрытия компании): такой файл получают оба разбора. <span class="tag t-per">свой у каждого разбора</span> — ответ является ОТБОРОМ (кого считать конкурентом, к какому классу отнести выход): отдать один файл обоим значит сделать направление общим и потерять смысл второго разбора.</p>
+<div class="hgrid">
+<div class="hlp">
+<h4>exitscout <span class="tag t-per">свой у каждого разбора</span></h4>
+<div class="meta">шаг 1-exit · запускает CMO · пишет <code>exit_candidates.json</code></div>
+<p>Помощник CMO по оси венчурного масштаба — собирает сопоставимые сделки и цифры выхода, считает варианты и кладёт их в exit_candidates.json. Решение о классе и покупателе остаётся за CMO.</p>
+<p><b>Не имеет права:</b> класс, покупател.</p>
+</div>
+<div class="hlp">
+<h4>falsifier </h4>
+<div class="meta">шаг 1-false · запускает координатор · пишет <code>absence_probe</code></div>
+<p>Фальсификатор утверждений об отсутствии — получает одну тяжёлую находку вида «этого нет» и пытается НАЙТИ то, чего, по её словам, не существует. Балл не ставит, отчёты не правит.</p>
+<p><b>Не имеет права:</b> балл, отчёты ролей.</p>
+</div>
+<div class="hlp">
+<h4>finscout <span class="tag t-per">свой у каждого разбора</span></h4>
+<div class="meta">шаг 1-fin · запускает CFO · пишет <code>finmodel_drivers_draft.json</code></div>
+<p>Помощник CFO по финмодели — читает книгу заявителя, СОБИРАЕТ черновик драйверов, гоняет машинные проверки и чинит технические сбои сборки. Допущения и утверждение драйверов остаются за CFO.</p>
+<p><b>Не имеет права:</b> допущени, finmodel_drivers.json.</p>
+</div>
+<div class="hlp">
+<h4>inputscout <span class="tag t-shared">общий</span></h4>
+<div class="meta">шаг 1-inputs · запускает координатор · пишет <code>market_inputs.json</code></div>
+<p>Пре-агент рыночных входов — собирает ОБЪЕКТИВНЫЕ величины, которые иначе каждая роль ищет отдельно (зарплаты, ставки взносов, цены облака, курс, медианы оценок, статистика). Ничего не оценивает.</p>
+<p><b>Не имеет права:</b> оценива, конкурент.</p>
+</div>
+<div class="hlp">
+<h4>pastscout <span class="tag t-shared">общий</span></h4>
+<div class="meta">шаг 1-past · запускает координатор · пишет <code>market_analogs.json</code></div>
+<p>Прошлый опыт рынка — ищет компании того же класса, которые БОЛЬШЕ НЕ РАБОТАЮТ, и причину, по которой они закрылись. Не конкуренты и не оценка применимости: случай приносит он, решает роль.</p>
+<p><b>Не имеет права:</b> конкурент, риск.</p>
+</div>
+<div class="hlp">
+<h4>peoplescout <span class="tag t-shared">общий</span></h4>
+<div class="meta">шаг 1-people · запускает координатор · пишет <code>people_footprint.json</code></div>
+<p>Публичный след основателей — профессиональная история, подтверждение заявленного опыта внешним источником и негативный фон, в ОБОИХ написаниях имени. Оценок людям не даёт.</p>
+<p><b>Не имеет права:</b> оценива, частную жизнь.</p>
+</div>
+<div class="hlp">
+<h4>prodscout <span class="tag t-shared">общий</span></h4>
+<div class="meta">шаг 1-prod · запускает координатор · пишет <code>product_surfaces.json</code></div>
+<p>Публичные поверхности продукта — сайт, магазины приложений, репозитории, статусы и даты обновлений: существует ли продукт вне презентации. Зрелость продукта не оценивает.</p>
+<p><b>Не имеет права:</b> зрелост, код.</p>
+</div>
+<div class="hlp">
+<h4>redteam <span class="tag t-per">свой у каждого разбора</span></h4>
+<div class="meta">шаг 1-red · запускает координатор · пишет <code>redteam_CFO.md</code></div>
+<p>Красная команда против нашей финмодели — ищет, где она оптимистичнее модели фаундера, драйверы без источника и допущения, чувствительные к сдвигу. Балл не трогает: материал приносит она, решает автор модели.</p>
+<p><b>Не имеет права:</b> балл, role_cfo.json.</p>
+</div>
+<div class="hlp">
+<h4>regscout <span class="tag t-shared">общий</span></h4>
+<div class="meta">шаг 1-reg · запускает координатор · пишет <code>registries.json</code></div>
+<p>Обход публичных реестров юрисдикции — регистрация юрлица, статус, руководитель, санкционные и дисквалификационные списки, судебные базы. Ходит в САМИ реестры, а не в поисковую выдачу о них. Правовых выводов не делает.</p>
+<p><b>Не имеет права:</b> правов, частную жизнь.</p>
+</div>
+<div class="hlp">
+<h4>compscout <span class="tag t-per">свой у каждого разбора</span></h4>
+<div class="meta">шаг 1-scan · запускает координатор · пишет <code>competitors.json</code></div>
+<p>Сканер конкурентов — собирает карточки живых прямых и косвенных конкурентов с адресами, тарифами и раундами. Угрозу не оценивает: это работа CMO.</p>
+<p><b>Не имеет права:</b> угроз, закрывшиеся.</p>
+</div>
+<div class="hlp">
+<h4>reader <span class="tag t-per">свой у каждого разбора</span></h4>
+<div class="meta">шаг 5-read · запускает координатор · пишет <code>reader_findings_&lt;движок&gt;.json</code></div>
+<p>Приёмщик документа — читает готовое заключение глазами члена инвесткомитета и называет места, которые невозможно понять с первого чтения. Ничего не переписывает.</p>
+<p><b>Не имеет права:</b> правит документ, видит отчёты ролей.</p>
+</div>
+</div>
+<div class="note"><strong>Почему граница именно такая.</strong> Стоит разрешить помощнику решать — и суждение уезжает исполнителю, у которого нет ни методики, ни ответственности за балл. Поэтому правило сформулировано проверяемо: число, которое можно <em>прочитать</em> или <em>посчитать</em>, — работа помощника; число, которое надо <em>решить</em>, — работа эксперта. Ставка налога, цена облака, сумма из ячейки — читаются. Темп набора клиентов, отток, цена, оценка компании — решаются.</div>
+<h2 id="gates">4 · Проверки по ступеням</h2>
+<p>Всего 57 запусков проверок за прогон — это 41 разных инструментов, часть из них работает на нескольких ступенях. Состав каждой ступени движок берёт из описания собственного потока: правишь шаг — меняется и ступень.</p>
+<div class="stage">
+<div class="step">
+<div class="step-id">Вход</div>
+<div><div class="chips"><span class="chip c">docs_inventory</span><span class="chip c">fetch_application</span><span class="chip c">founder_model_audit</span><span class="chip c">input_sanity</span><span class="chip c">mandate_gate</span><span class="chip c">mem_index</span><span class="chip c">mem_search</span></div></div>
+</div>
+<div class="step">
+<div class="step-id">Разбор одним проходом</div>
+<div><div class="chips"><span class="chip c">assemble</span><span class="chip c">build_finmodel_from_drivers</span><span class="chip c">consistency_check</span><span class="chip c">validate_report</span><span class="chip c">verify_evidence</span></div></div>
+</div>
+<div class="step">
+<div class="step-id">Разбор комиссией</div>
+<div><div class="chips"><span class="chip c">absence_claims</span><span class="chip c">anchor_check</span><span class="chip c">assemble</span><span class="chip c">consistency_check</span><span class="chip c">dep_cov</span><span class="chip c">mandate_gate</span><span class="chip c">outlook_lint</span><span class="chip c">phase_read_check</span><span class="chip c">rcp_audit</span><span class="chip c">relay</span><span class="chip c">stopfactor_check</span><span class="chip c">validate_report</span><span class="chip c">verify_evidence</span></div></div>
+</div>
+<div class="step">
+<div class="step-id">Сборка</div>
+<div><div class="chips"><span class="chip c">conditions_delivery</span><span class="chip c">findings_diff</span></div></div>
+</div>
+<div class="step">
+<div class="step-id">Документы и доставка</div>
+<div><div class="chips"><span class="chip c">build_finmodel_from_drivers</span><span class="chip c">build_questions</span><span class="chip c">collect_conditions</span><span class="chip c">delivery_check</span><span class="chip c">finmodel_sanity</span><span class="chip c">freshness</span><span class="chip c">gate_ledger</span><span class="chip c">lint_language</span><span class="chip c">narrative_vs_model</span><span class="chip c">questions_gate</span><span class="chip c">questions_state</span><span class="chip c">questions_vs_docs</span><span class="chip c">reader_audit</span><span class="chip c">render</span><span class="chip c">render_questions</span><span class="chip c">report_trace</span><span class="chip c">run_diff</span></div></div>
+</div>
+<div class="step">
+<div class="step-id">После доставки</div>
+<div><div class="chips"><span class="chip c">mem_archive</span><span class="chip c">post_to_hermes</span><span class="chip c">run_cost</span></div></div>
+</div>
+</div>
+<h2 id="prompt">5 · Из чего состоит задание</h2>
+<p>Методика каждой роли разрезана на слои. <strong>Ядро</strong> эксперт получает всегда — в нём зона ответственности, критерии, поля-гейты и правила языка. <strong>Фазовые карты</strong> он открывает по ходу: карту исследования — до первого поиска, карту оценки — до первого балла; открыл ли он их, проверяется по стенограмме, потому что на одном из прогонов их открыли две роли из пяти.</p>
+<p>Суммарный объём ядер пяти экспертов — 234 250 знаков. Из тех же слоёв собирается задание для второго разбора: он читает их ломтями, по роли за раз, а не одним куском — так меньше держится в памяти и граница ломтя совпадает с точкой сохранения.</p>
+<div class="note good"><strong>Почему правило нельзя положить «куда-нибудь».</strong> Правило, попавшее только в общую шапку, не доходит до экспертов комиссии; попавшее только в описание потока — не доходит до второго разбора; вынесенное в файл памяти проекта — не доходит ни до кого, потому что исполнитель этот файл не видит вовсе. Поэтому каждое важное правило живёт в четырёх местах сразу, и это проверяется отдельным тестом.</div>
+<div class="footer">Activat VC · внутренний документ · собран из движка 31 августа 2026. Критерии, веса, минимумы проверок, помощники и шаги — извлечены из кода и методик, а не написаны отдельно.</div>
+</div></body></html>
