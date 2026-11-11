@@ -1,0 +1,49 @@
+# Activat VC
+
+> Activat VC is a venture company (since 2014) that invests in early-stage IT startups at pre-seed and seed. Own check is usually up to USD 100,000; larger rounds are syndicated with members of the Activat Invest club and other investors. Applications are accepted only through the form at https://apply.activat.vc/ and must be submitted by the founder personally.
+
+## How to apply
+
+- Application form: https://apply.activat.vc/
+- Founders page (criteria, what to prepare, selection steps, FAQ): https://activat.vc/startups; questions — AI assistant on the site
+- Investment declaration (mandate): https://activat.vc/declaration
+- The founder fills in and submits the form personally and gives the data-processing consents. An AI assistant may help prepare the materials. Applications or emails sent by an agent on the founder's behalf are not considered.
+
+## Mandate
+
+- Stage: pre-seed, seed.
+- Founders: at least one founder from Kazakhstan, Central Asia or the Caucasus. Details: https://activat.vc/declaration
+- Sectors: technology products in any industry except blockchain and crypto, DeepTech, gambling.
+- Exit horizon: up to 3 years or 2 rounds.
+
+## Minimum requirements
+
+- Global market of at least USD 10 billion.
+- Prototype or MVP.
+- Traction: sales, deals, revenue, users or downloads.
+- Roadmap to the next round and a financial model for 12–18 months.
+
+## What to prepare
+
+- Pitch deck (PDF), financial model (Excel), link to a founder video pitch, founders and cap table, traction data, round size and use of funds.
+
+## Process (2–3 weeks on average)
+
+1. Application at apply.activat.vc
+2. Call or meeting with the Activat VC team
+3. Preliminary investment committee
+4. Due diligence
+5. Final investment committee and answer to the founder
+6. Term sheet, signing, investment
+
+## Other audiences
+
+- Investors (co-investment, Activat Invest club): https://activat.vc/invest
+- Venture scouts: https://activat.vc/scout
+- Careers: https://activat.vc/karera
+
+---
+
+# Activat VC (кратко по-русски)
+
+Activat VC инвестирует в IT-стартапы на стадиях pre-seed и seed, собственный чек обычно до 100 000 долларов США. Заявка — только через форму https://apply.activat.vc/, подаёт её сам основатель. Подробно для основателей: https://activat.vc/startups
